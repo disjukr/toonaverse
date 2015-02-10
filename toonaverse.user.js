@@ -110,3 +110,19 @@ var toonaverse = {
         return self.searchObj(location.search);
     }
 };
+window.toonaverse = toonaverse; // userscript is running on sandbox
+
+switch (location.pathname.split('/').pop()) {
+case 'weekday.nhn':
+    break;
+case 'weekdayList.nhn':
+    break;
+case 'bestChallenge.nhn':
+    break;
+case 'challenge.nhn':
+    break;
+case 'list.nhn':
+    break;
+case 'detail.nhn':
+    break;
+}
