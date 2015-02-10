@@ -21,7 +21,36 @@ var toonaverse = {
             xhr.send();
         });
     },
-    detail: function (titleId) {
+    content: function (titleId, no) {
+        var self = this;
+        return new Promise(function (resolve, reject) {
+            self.dom('http://comic.naver.com/webtoon/detail.nhn' + self.searchStr({
+                titleId: titleId || self.search.titleId,
+                no: no || self.search.no
+            })).then(function (contentDom) {
+                { // image urls
+                    var imgUrls = [];
+                    var webToonViewer = contentDom.getElementsByClassName('wt_viewer')[0];
+                    var viewContents = webToonViewer.children;
+                    var len = viewContents.length;
+                    for (var i = 0; i < len; ++i) {
+                        var viewContent = viewContents[i];
+                        if (viewContent.tagName === 'IMG')
+                            imgUrls.push(viewContent.src);
+                    }
+                }
+                { // author comment
+                    var writerInfo = contentDom.getElementsByClassName('writer_info')[0];
+                    var authorComment = writerInfo.children[1].textContent;
+                }
+                resolve({
+                    imgUrls: imgUrls,
+                    authorComment: authorComment
+                });
+            });
+        });
+    },
+    info: function (titleId) {
         var self = this;
         return new Promise(function (resolve, reject) {
             self.dom('http://comic.naver.com/webtoon/list.nhn' + self.searchStr({
