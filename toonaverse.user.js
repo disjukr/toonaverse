@@ -28,6 +28,10 @@ var toonaverse = {
                 titleId: titleId || self.search.titleId,
                 no: no || self.search.no
             })).then(function (contentDom) {
+                { // title
+                    var titleArea = contentDom.getElementsByClassName('tit_area')[0];
+                    var title = titleArea.getElementsByTagName('h3')[0].textContent;
+                }
                 { // image urls
                     var imgUrls = [];
                     var webToonViewer = contentDom.getElementsByClassName('wt_viewer')[0];
@@ -44,6 +48,7 @@ var toonaverse = {
                     var authorComment = writerInfo.children[1].textContent;
                 }
                 resolve({
+                    title: title,
                     imgUrls: imgUrls,
                     authorComment: authorComment
                 });
