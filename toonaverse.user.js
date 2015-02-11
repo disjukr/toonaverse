@@ -16,7 +16,10 @@ var toonaverse = {
             xhr.open('get', url);
             xhr.onload = function () {
                 var dom = (new DOMParser).parseFromString(xhr.responseText, 'text/html');
-                resolve(dom);
+                if (xhr.getResponseHeader('TM-finalURL') !== null)
+                    reject('redirected');
+                else
+                    resolve(dom);
             };
             xhr.send();
         });
@@ -52,6 +55,8 @@ var toonaverse = {
                     imgUrls: imgUrls,
                     authorComment: authorComment
                 });
+            }).catch(function (e) { // maybe removed
+                resolve(null);
             });
         });
     },
@@ -117,6 +122,24 @@ var toonaverse = {
 };
 window.toonaverse = toonaverse; // userscript is running on sandbox
 
+
+// 마개조 시작
+function launchNuclearBomb() {
+    return new Promise(function (resolve, reject) {
+        function boom() {
+            document.body.parentElement.innerHTML = [
+                '<head>', '</head>',
+                '<body>', '</body>'
+            ].join('');
+            resolve();
+        }
+        if (document.readyState === 'interactive' || document.readyState === 'complete')
+            boom();
+        else
+            window.addEventListener('DOMContentLoaded', boom, true);
+    });
+}
+
 switch (location.pathname.split('/').pop()) {
 case 'weekday.nhn':
     break;
@@ -129,5 +152,24 @@ case 'challenge.nhn':
 case 'list.nhn':
     break;
 case 'detail.nhn':
+    launchNuclearBomb().then(function () {
+        return toonaverse.info();
+    }).then(function (info) {
+        var contentPromises = [];
+        for (var i = 1; i <= info.lastNo; ++i)
+            contentPromises.push(toonaverse.content(toonaverse.search.titleId, i));
+        Promise.all(contentPromises).then(function (contents) {
+            document.body.innerHTML = contents.map(function (content) {
+                if (content === null) return '';
+                return [
+                    '<p>제목: ' + content.title + '</p>',
+                    '<p>작가의 말: ' + content.authorComment + '</p>',
+                    content.imgUrls.map(function (imgUrl) {
+                        return '<img style="display:block" src="' + imgUrl + '">'
+                    }).join('')
+                ].join('');
+            }).join('');
+        });
+    });
     break;
 }
