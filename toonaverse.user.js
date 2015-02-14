@@ -5,7 +5,8 @@
 // @namespace    http://0xABCDEF.com/toonaverse
 // @copyright    2014 JongChan Choi
 // @match        http://comic.naver.com/webtoon*
-// @grant        none
+// @require      http://code.jquery.com/jquery-2.1.3.min.js
+// @grant        unsafeWindow
 // ==/UserScript==
 
 var toonaverse = {
@@ -53,29 +54,10 @@ var toonaverse = {
             url.then(function (url) {
                 return self.dom(url);
             }).then(function (contentDom) {
-                { // title
-                    var titleArea = contentDom.getElementsByClassName('tit_area')[0];
-                    var title = titleArea.getElementsByTagName('h3')[0].textContent;
-                }
-                { // image urls
-                    var imgUrls = [];
-                    var webToonViewer = contentDom.getElementsByClassName('wt_viewer')[0];
-                    var viewContents = webToonViewer.children;
-                    var len = viewContents.length;
-                    for (var i = 0; i < len; ++i) {
-                        var viewContent = viewContents[i];
-                        if (viewContent.tagName === 'IMG')
-                            imgUrls.push(viewContent.src);
-                    }
-                }
-                { // author comment
-                    var writerInfo = contentDom.getElementsByClassName('writer_info')[0];
-                    var authorComment = writerInfo.children[1].textContent;
-                }
                 resolve({
-                    title: title,
-                    imgUrls: imgUrls,
-                    authorComment: authorComment
+                    title: $('.tit_area h3', contentDom).text(),
+                    imgUrls: $('.wt_viewer > img', contentDom).map(function () { return this.src; }).toArray(),
+                    authorComment: $('.writer_info > p', contentDom).text()
                 });
             }).catch(function (e) { // maybe removed
                 resolve(null);
@@ -89,27 +71,11 @@ var toonaverse = {
                 titleId: titleId || self.search.titleId,
                 page: 1
             })).then(function (listDom) {
-                var detail = listDom.getElementsByClassName('detail')[0];
-                { // title & author
-                    var titleAndAuthor = detail.children[0];
-                    var title = titleAndAuthor.childNodes[0].textContent.trim();
-                    var author = titleAndAuthor.childNodes[1].textContent.trim();
-                }
-                { // description
-                    var description = detail.children[1].textContent;
-                }
-                { // last no
-                    var viewListTable = listDom.getElementsByClassName('viewList')[0];
-                    var tbody = listDom.getElementsByTagName('tbody')[0];
-                    var lastItem = tbody.getElementsByTagName('tr')[1]; // 0 is blank
-                    var anchor = lastItem.getElementsByTagName('a')[0];
-                    var lastNo = +self.urlToSearchObj(anchor.getAttribute('href')).no;
-                }
                 resolve({
-                    title: title,
-                    author: author,
-                    description: description,
-                    lastNo: lastNo
+                    title: $('.detail > h2', listDom)[0].childNodes[0].textContent.trim(),
+                    author: $('.detail > h2 .wrt_nm', listDom).text().trim(),
+                    description: $('.detail > p', listDom).text(),
+                    lastNo: +self.urlToSearchObj($('.viewList tr', listDom).eq(2).find('a').attr('href')).no
                 });
             });
         });
@@ -148,17 +114,13 @@ window.toonaverse = toonaverse; // userscript is running on sandbox
 // 마개조 시작
 function launchNuclearBomb() {
     return new Promise(function (resolve, reject) {
-        function boom() {
+        $(function () {
             document.body.parentElement.innerHTML = [
                 '<head>', '</head>',
                 '<body>', '</body>'
             ].join('');
             resolve();
-        }
-        if (document.readyState === 'interactive' || document.readyState === 'complete')
-            boom();
-        else
-            window.addEventListener('DOMContentLoaded', boom, true);
+        });
     });
 }
 
@@ -178,13 +140,13 @@ case 'detail.nhn':
         var currentContent;
         toonaverse.content().then(function (currentContent) {
             launchNuclearBomb().then(function () {
-                document.body.innerHTML = [
+                $(document.body).html([
                     '<p>제목: ' + currentContent.title + '</p>',
                     '<p>작가의 말: ' + currentContent.authorComment + '</p>',
                     currentContent.imgUrls.map(function (imgUrl) {
                         return '<img style="display:block" src="' + imgUrl + '">'
                     }).join('')
-                ].join('');
+                ].join(''));
             });
         });
     })();
