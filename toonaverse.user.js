@@ -6,6 +6,9 @@
 // @copyright    2014 JongChan Choi
 // @match        http://comic.naver.com/webtoon*
 // @require      http://code.jquery.com/jquery-2.1.3.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/mustache.js/0.8.1/mustache.min.js
+// @resource     viewer template/viewer.html
+// @grant        GM_getResourceText
 // @grant        unsafeWindow
 // ==/UserScript==
 
@@ -112,13 +115,19 @@ window.toonaverse = toonaverse; // userscript is running on sandbox
 
 
 // 마개조 시작
-function launchNuclearBomb() {
+function launchNuclearBomb(template, data) {
     return new Promise(function (resolve, reject) {
         $(function () {
-            document.body.parentElement.innerHTML = [
-                '<head>', '</head>',
-                '<body>', '</body>'
-            ].join('');
+            document.body.parentElement.innerHTML = '<head></head><body></body>';
+            if (template) {
+                // document.body.innerHTML = Mustache.render(GM_getResourceText(template), data);
+                document.body.innerHTML = Mustache.render(template, data);
+                var scriptRegex = /<script>(.*?)<\/script>/gi;
+                do {
+                    var script = scriptRegex.exec(template);
+                    eval(script ? script[1] : '');
+                } while (script !== null);
+            }
             resolve();
         });
     });
@@ -139,35 +148,15 @@ case 'detail.nhn':
     (function () {
         var currentContent;
         toonaverse.content().then(function (currentContent) {
-            launchNuclearBomb().then(function () {
-                $(document.body).html([
-                    '<p>제목: ' + currentContent.title + '</p>',
-                    '<p>작가의 말: ' + currentContent.authorComment + '</p>',
-                    currentContent.imgUrls.map(function (imgUrl) {
-                        return '<img style="display:block" src="' + imgUrl + '">'
-                    }).join('')
-                ].join(''));
-            });
+            launchNuclearBomb([
+                '<p>제목: {{title}}</p>',
+                '<p>작가의 말: {{authorComment}}</p>',
+                '{{#imgUrls}}',
+                '<img style="display:block" src="{{.}}">',
+                '{{/imgUrls}}',
+                '<script>console.log("Hello, Mustache!");</script>'
+            ].join(''), currentContent);
         });
     })();
-    // launchNuclearBomb().then(function () {
-    //     return toonaverse.info();
-    // }).then(function (info) {
-    //     var contentPromises = [];
-    //     for (var i = 1; i <= info.lastNo; ++i)
-    //         contentPromises.push(toonaverse.content(toonaverse.search.titleId, i));
-    //     Promise.all(contentPromises).then(function (contents) {
-    //         document.body.innerHTML = contents.map(function (content) {
-    //             if (content === null) return '';
-    //             return [
-    //                 '<p>제목: ' + content.title + '</p>',
-    //                 '<p>작가의 말: ' + content.authorComment + '</p>',
-    //                 content.imgUrls.map(function (imgUrl) {
-    //                     return '<img style="display:block" src="' + imgUrl + '">'
-    //                 }).join('')
-    //             ].join('');
-    //         }).join('');
-    //     });
-    // });
     break;
 }

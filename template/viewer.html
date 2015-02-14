@@ -1,0 +1,18 @@
+<style type="text/css">
+html, body {
+    margin: 0;
+    padding: 0;
+}
+img.webtoon {
+    display: block;
+}
+</style>
+
+<h1>{{title}}</h1>
+
+{{#imgUrls}}
+<img class="webtoon" src="{{.}}">
+{{/imgUrls}}
+
+<h2>작가의 말</h2>
+<q>{{authorComment}}</q>
