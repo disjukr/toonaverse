@@ -1,0 +1,30 @@
+<div class="block-{{no}}">
+
+    <h1>{{title}}</h1>
+
+    {{#imgUrls}}
+    <img class="webtoon-image" src="{{.}}">
+    {{/imgUrls}}
+
+    <h2>작가의 말</h2>
+    <q>{{authorComment}}</q>
+
+    <script type="toonaverse">
+    var isWebtoonLoaded = Promise.all($('.block-{{no}} img', parent).map(function () {
+        if (this.complete) {
+            resolve();
+        } else {
+            $(this).load(function () {
+                resolve();
+            });
+        }
+    }).toArray());
+    isWebtoonLoaded.then(function showNextButton() {
+        $('#next').css('display', 'block').on('click', function () {
+            $(this).css('display', 'none').off('click');
+            loadAndPasteToon({{no}} + 1);
+        });
+    });
+    </script>
+
+</div>

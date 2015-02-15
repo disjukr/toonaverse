@@ -1,18 +1,48 @@
-<style type="text/css">
-html, body {
-    margin: 0;
-    padding: 0;
-}
-img.webtoon {
-    display: block;
-}
-</style>
+<div class="viewer">
 
-<h1>{{title}}</h1>
+    <div id="blocks"></div>
+    <button id="next" style="display:none">다음 화 보기</button>
 
-{{#imgUrls}}
-<img class="webtoon" src="{{.}}">
-{{/imgUrls}}
+    <style type="text/css">
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .webtoon-image {
+        display: block;
+    }
+    .viewer {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    </style>
+    <script type="toonaverse">
+    function loadAndPasteToon(no) {
+        toonaverse.content({{titleId}}, no).then(function (content) {
+            if (content === null) {
+                toonaverse.info({{titleId}}).then(function (info) {
+                    if (info.lastNo <= no) { // 더이상 다음화가 없음
+                        // TODO: 어떡하지
+                    } else { // 만화가 삭제됐나?
+                        loadAndPasteToon(no + 1);
+                    }
+                });
+            } else {
+                content.no = no;
+                pasteToon(content);
+            }
+        });
+    }
+    function pasteToon(content) {
+        evalTemplate('webtoon_block', content, {
+            loadAndPasteToon: loadAndPasteToon
+        }, $('#blocks')[0]);
+    }
+    content.no = {{no}};
+    pasteToon(content);
+    </script>
 
-<h2>작가의 말</h2>
-<q>{{authorComment}}</q>
+</div>
